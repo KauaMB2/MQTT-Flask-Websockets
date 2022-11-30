@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+   <head>
+      <!-- Required meta tags -->
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <!-- Bootstrap CSS -->
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+      <style>
+         body{
+         background-color: #212121;
+         }
+         .header{
+         padding: 15px;
+         width: 100vw;
+         height: 130px;
+         }
+         .verticalAlign{
+         padding: 22px;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         }
+         .horizontalAlign{
+         width: 100vw;
+         display: flex;
+         justify-content: space-around;
+         }
+         .subscribe,.publish{
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         width:400px;
+         height:280px;
+         }
+         .title-content,.content,label{
+         color: #0d8;
+         }
+         label{
+         font-weight: bold;
+         }
+         .content{
+         font-size: 100px;
+         }
+         .footer{
+         margin-top: 30px;
+         padding: 22px;
+         width: 100vw;
+         height: 300px;
+         }
+         textarea{
+         resize: none;
+         }
+      </style>
+      <!-- Include JQuery library from CDN -->
+      <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+      <!-- Include Paho JavaScript MQTT Client from CDN -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+      <script type="text/javascript">
+         //  Variables
+         var WebSocket_MQTT_Broker_URL = "";
+         var MQTT_Client_ID = "";
+         var MQTT_Topic = "";
+         var MQTT_Client = "";
+         
+         
+         function mqtt_Connect_with_Broker(){
+         
+           // Set variables
+           WebSocket_MQTT_Broker_URL = document.getElementById("txt_MQTT_Broker_URL").value;
+           MQTT_Client_ID = document.getElementById("txt_MQTT_Client_ID").value;
+         
+           // Create a MQTT Client nstance 
+           MQTT_Client = new Paho.MQTT.Client(WebSocket_MQTT_Broker_URL, MQTT_Client_ID);
+         
+           // set callback handlers
+           MQTT_Client.onConnectionLost = onConnectionLost;
+           MQTT_Client.onMessageArrived = onMessageArrived;
+         
+           MQTT_Client.connect({onSuccess:onConnect});
+         
+         }
+         
+         // Subscribe to MQTT Topic
+         const mqtt_Subscribe_to_Topic=()=>{
+           MQTT_Subscribe_Topic = document.getElementById("txt_MQTT_Subscribe_Topic").value;
+            try{
+               MQTT_Client.subscribe(MQTT_Subscribe_Topic);
+               Set_New_Console_Msg("Subscribed to MQTT Topic: " + "\"" + MQTT_Subscribe_Topic + "\"" );
+            }catch{
+               Set_New_Console_Msg("ERROR! Please, firstly, you must connect to the MQTT server");
+            }
+         }
+         
+         // Send MQTT Message 
+         const mqtt_Publish_Message=()=>{
+           message = new Paho.MQTT.Message(document.getElementById("txt_MQTT_Msg").value);
+           message.destinationName = document.getElementById("txt_MQTT_Publish_Topic").value;
+           try{
+              MQTT_Client.send(message);
+              Set_New_Console_Msg("Published " + "\"" + document.getElementById("txt_MQTT_Msg").value + "\"" + "to MQTT Topic: " + "\"" +  document.getElementById("txt_MQTT_Publish_Topic").value + "\"");
+           }catch{
+               Set_New_Console_Msg("ERROR! Please, firstly, you must connect to the MQTT server");
+            }
+         
+         }
+         
+         // called when the client connects
+         const onConnect=()=>{
+           // Once a connection has been made, make a subscription and send a message.
+           Set_New_Console_Msg("Connected with MQTT Broker: " + "\"" + document.getElementById("txt_MQTT_Broker_URL").value + "\"");
+         }
+         
+         // called when the client loses its connection
+         const onConnectionLost=(responseObject)=> {
+           if (responseObject.errorCode !== 0) {
+             Set_New_Console_Msg("Connection Lost with MQTT Broker. Error: " + "\"" +responseObject.errorMessage + "\"");
+           }
+         }
+         
+         // called when a message arrives
+         const onMessageArrived=(message)=> {
+           Set_New_Console_Msg("MQTT Message Recieved. "  + " Message: " + "\"" +  message.payloadString + "\"" + " MQTT Topic: " + "\"" + message.destinationName + "\"" + " QoS Value: " + "\"" + message.qos + "\"");
+         
+           date=get_Fromatted_Time()
+           server.insertData(message.payloadString,message.destinationName,date,message.qos);
+         } 
+         
+         
+         // Document Ready Event
+         $(document).ready( function() {
+           //Set default MQTT Broker WebSocket URL
+           document.getElementById("txt_MQTT_Broker_URL").value = "ws://broker.hivemq.com:8000/mqtt";//Define the broker URL
+           //Generate Random MQTT Clinet ID
+           gen_MQTT_Client_ID();
+         
+         })
+         
+         
+         // Set MQTT Messages to TextArea
+         const Set_New_Console_Msg=(text)=> {
+           document.getElementById("txtAr_Console").value = document.getElementById("txtAr_Console").value + get_Fromatted_Time().toString() + ":  " + text + "\n";
+           document.getElementById("txtAr_Console").scrollTop = document.getElementById("txtAr_Console").scrollHeight;
+         }
+         
+         //Clear Console
+         const clear_Console=()=>{
+           document.getElementById("txtAr_Console").value = "";
+         }
+         
+         // Get Formatted time in Hour:Minute:Seconds AM/PM format
+         const get_Fromatted_Time=()=> {
+           var dt = new Date();
+           var hours = dt.getHours() == 0 ? "12" : dt.getHours() > 12 ? dt.getHours() - 12 : dt.getHours();
+           var minutes = (dt.getMinutes() < 10 ? "0" : "") + dt.getMinutes();
+           var seconds = dt.getSeconds();
+           var ampm = dt.getHours() < 12 ? "AM" : "PM";
+           var formattedTime = hours + ":" + minutes + ":" + seconds + " " + ampm;
+           return formattedTime;
+         }
+         
+         // Randomly generate Client ID
+         const gen_MQTT_Client_ID=()=>{
+           document.getElementById("txt_MQTT_Client_ID").value = Math.floor(100000000000 + Math.random() * 900000000000);//Define a aleatory ID
+         }
+         const mqtt_Publish_Aleatory_Message=()=>{
+             x=Math.floor(Math.random() * (100 - 0 + 1) + 0).toString()//Generate aleatory value
+             message = new Paho.MQTT.Message(x);
+             message.destinationName = document.getElementById("txt_MQTT_Publish_Topic").value;
+             try{
+                MQTT_Client.send(message);
+                Set_New_Console_Msg("Published " + "\"" + x + "\"" + "to MQTT Topic: " + "\"" +  document.getElementById("txt_MQTT_Publish_Topic").value + "\"");
+             }catch{
+               Set_New_Console_Msg("ERROR! Please, firstly, you must connect to the MQTT server");
+            }
+         }
+      </script>
+      <title>MQTT Project</title>
+   </head>
+   <body>
+      <header class="header bg-dark">
+         <div class="row">
+            <div class="col-2 text-center"><label>WebSocket MQTT Broker URL:</label></div>
+            <div class="col-8 text-center"><input class="form-control" id="txt_MQTT_Broker_URL" placeholder="Type WebSocket MQTT Broker here..."></div>
+            <a class="nav-link" href="{{ url_for('db_page')}}">
+            <button class="btn btn-warning py-3">See Data Base</button>
+            </a>
+         </div>
+         <div class="row">
+            <div class="col-2 text-center"><label>MQTT Client ID:</label></div>
+            <div class="col-6 text-center"><input class="form-control" id="txt_MQTT_Client_ID" placeholder="Type MQTT Client here..."></div>
+            <div class="col-2 text-center"><button class="btn btn-success" onclick="mqtt_Connect_with_Broker();">Connect</button></div>
+         </div>
+      </header>
+      <main class="verticalAlign">
+         <div class="horizontalAlign">
+            <div>
+               <div class="subscribe bg-dark">
+                  <div class="my-3 text-center"><label>MQTT Topic (Subscribe):</label></div>
+                  <div class="my-3 text-center mx-3"><input class="form-control" id="txt_MQTT_Subscribe_Topic" placeholder="Type topic here..."></div>
+                  <div class="my-3 text-center"><button class="btn btn-primary" onclick="mqtt_Subscribe_to_Topic();">Subscribe</button></div>
+               </div>
+            </div>
+            <div>
+               <div class="publish bg-dark">
+                  <div class="my-1 text-center"><label>MQTT Topic (Publish):</label></div>
+                  <div class="my-1 text-center mx-3"><input class="form-control" id="txt_MQTT_Publish_Topic" placeholder="Type topic here..."></div>
+                  <div class="my-1 text-center"><label>MQTT Message:</label></div>
+                  <div class="my-1 text-center mx-3"><input class="form-control" id="txt_MQTT_Msg" placeholder="Type message here..."></div>
+                  <div class="my-1 text-center"><button class="btn btn-primary" onclick="mqtt_Publish_Message();">Publish</button></div>
+                  <div class="my-1 text-center"><button class="btn btn-warning" onclick="mqtt_Publish_Aleatory_Message();">Publish Aleatory Value(0~100)</button></div>
+               </div>
+            </div>
+         </div>
+      </main>
+      <footer class="footer bg-dark">
+         <div class="row">
+            <div class="col-1"><label for="txtAr_Console">Console:</label></div>
+            <div class="col-8">
+               <textarea type="textarea" class="form-control" rows="10" cols="100" id="txtAr_Console" disabled></textarea>
+            </div>
+            <div class="col-2">
+               <button type="button" id="btn_Clear_Console" class="btn btn-warning"  onclick="clear_Console();" >Clear Console</button>
+            </div>
+         </div>
+      </footer>
+      <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+      <script src='https://kit.fontawesome.com/a076d05399.js'></script>
+      <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+   </body>
+</html>
