@@ -1,6 +1,6 @@
 # MQTT & Flask & Websockets
 
-> This repository contains basic examples of Publishing and Subscribing in a MQTT Broker in differents languages.
+> Sending data using WebSockets and MQTT to the MySQL and showing the information in a table(HTML, CSS, JavaScript, Python and Flask).
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/KauaMB2/MQTT-Flask-Websockets?style=for-the-badge)
 ![GitHub language count](https://img.shields.io/github/languages/count/KauaMB2/MQTT-Flask-Websockets?style=for-the-badge)
