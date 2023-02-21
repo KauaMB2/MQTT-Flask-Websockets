@@ -1,6 +1,6 @@
 # MQTT & Flask & Websockets
 
-> Sending data using WebSockets and MQTT to the MySQL and showing the information in a table(HTML, CSS, JavaScript, Python and Flask).
+> Sending data using WebSockets and MQTT to the MySQL and showing the information in a table. I used HTML, CSS, JavaScript, Python and Flask.
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/KauaMB2/MQTT-Flask-Websockets?style=for-the-badge)
 ![GitHub language count](https://img.shields.io/github/languages/count/KauaMB2/MQTT-Flask-Websockets?style=for-the-badge)
